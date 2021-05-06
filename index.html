@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>**Template project with JQuery**</title>
+    <link href='styles.css' rel='stylesheet' />
+    <script src='jquery-3.4.1.min.js'></script>
+</head>
+
+
+<body style="padding:10px">
+    <div id="game-board" style="background:aliceblue; width:300px; height:300px">
+    </div>
+	
+    <div style="margin-top:20px; height:20px" id="selected-chars"></div>
+    <div>
+        <h3>Solved words:</h3>
+        <div style="margin-top:20px" id="solved-words"></div>
+    </div>
+    <script src='script.js'></script>
+</body>
+</html>
+
+<style>
+    .game-board-row {
+        margin-bottom: 4px;
+    }
+	.selectable-char {
+		display: inline-block;
+		width: 24px;
+		height: 24px;
+		text-align: center;
+		line-height: 24px;
+		font-size: 14px;
+		font-family: sans-serif;
+		background: #8749fc;
+		border-radius: 6px;
+		color: white;
+        margin-right: 4px;
+        text-transform: uppercase;
+	}
+    .selectable-char.selected {
+        background: darkviolet;
+        color: yellow;
+    }
+</style>
+
+<script>
+	setTimeout(function(){
+	
+        var _wordsToFind = ['apple', 'orange', 'pear', 'watermelon', 'banana'];
+        
+        function createGameBoard(){
+            var maxDimension = Math.max.apply(null, _wordsToFind.map(function (word) { return word.length }));
+            
+            var gameBoardDiv = $('#game-board');
+            for (var i = 0; i < _wordsToFind.length; i++){
+                var word = _wordsToFind[i];
+                var $row = $('<div class="game-board-row" row-index=' + i + '></div>');
+                for (var j = 0; j < word.length; j++){
+                    $row.append('<div class="selectable-char" column-index=' + j + '>' + word[j] + '</div>');
+                }
+                gameBoardDiv.append($row);
+            }
+        }
+        createGameBoard();
+    
+        var _initialMoveDirection = null;
+	
+		function _redraw(){
+            $('.selectable-char.selected').removeClass('selected');
+            _selectedCharElements.forEach(function (elem) { $(elem).addClass('selected') });
+			var selectedChars = _selectedCharElements.map(function(elem) { return elem.textContent });
+			$('#selected-chars').empty().text(selectedChars.join(''));
+		}
+        
+        function _getRowAndColumnIndicesOf(charElement){
+            var charDiv = $(charElement);
+            var rowIndex = charDiv.closest('.game-board-row').attr('row-index');
+            var columnIndex = charDiv.attr('column-index');
+            return [parseInt(rowIndex), parseInt(columnIndex)];
+        }
+        
+        function _getMoveDirectionFrom(firstChar, secondChar){
+            var firstArray = _getRowAndColumnIndicesOf(firstChar);
+            var secondArray = _getRowAndColumnIndicesOf(secondChar);
+            var firstCharRow = firstArray[0];
+            var firstCharColumn = firstArray[1];
+            var secondCharRow = secondArray[0];
+            var secondCharColumn = secondArray[1];
+            if (secondCharRow == firstCharRow){
+                if (secondCharColumn == firstCharColumn + 1) return 'right';
+                else if (secondCharColumn == firstCharColumn - 1) return 'left';
+                else return null;
+            } else if (secondCharColumn == firstCharColumn) {
+                if (secondCharRow == firstCharRow + 1) return 'down';
+                else if (secondCharRow == firstCharRow - 1) return 'up';
+                else return null;
+            } else return null;
+        }
+	
+		document.addEventListener('touchstart', function(e){
+			//console.log('--touchstart:');
+			_selectedCharElements = [];
+			
+			var touch = e.touches[0];
+			var charElement = document.elementFromPoint(touch.clientX, touch.clientY);
+			if (charElement && charElement.className.indexOf('selectable-char') > -1){
+				_selectedCharElements.push(charElement);
+				_redraw();
+			}
+
+		});
+		document.addEventListener('touchmove', function(e){
+			//console.log('--touchmove:');
+			var touch = e.touches[0];
+			var charElement = document.elementFromPoint(touch.clientX, touch.clientY);
+			if (charElement &&  charElement.className.indexOf('selectable-char') > -1 && 
+				_selectedCharElements.indexOf(charElement) == -1){
+				_selectedCharElements.push(charElement);
+                if (_selectedCharElements.length == 2){
+                    _initialMoveDirection = _getMoveDirectionFrom(_selectedCharElements[0], _selectedCharElements[1]);
+                    if (_initialMoveDirection == null)
+                        _selectedCharElements.pop();
+                } else if (_selectedCharElements.length > 2){
+                    var lastCharIndex = _selectedCharElements.length - 1;
+                    var currentMoveDirection = _getMoveDirectionFrom(
+                        _selectedCharElements[lastCharIndex - 1], _selectedCharElements[lastCharIndex]);
+                    if (currentMoveDirection != _initialMoveDirection)
+                        _selectedCharElements.pop();
+                }
+				_redraw();
+			}
+		});
+		document.addEventListener('touchend', function(e){
+			//console.log('--touchend:');
+            _selectedCharElements = [];
+            _redraw();
+		});
+		document.addEventListener('touchcancel', function(e){
+			console.log('--touchcancel:');
+			console.log(e);
+		});
+	});
+/* CODE DUMP
+
+                    var moveDirection = _describePositionOfSecondCharRelativeToFirstChar(
+                        _selectedCharElements[0], _selectedCharElements[1]);
+
+        var _isSelectingRow; // false means is selecting column
+
+        function createGameBoard(){
+            var maxDimension = Math.max.apply(null, _wordsToFind.map(function (word) { return word.length }));
+            var $gameBoardRows = $('.game-board-row');
+            for (var i = 0; i < _wordsToFind.length; i++){
+                var word = _wordsToFind[i];
+                var $row = $gameBoardRows.eq(i);
+                for (var j = 0; j < word.length; j++){
+                    $row.append('<div class="selectable-char">' + word[j] + '</div>');
+                }
+            }
+        }
+
+*/
+    
+    
+</script>
